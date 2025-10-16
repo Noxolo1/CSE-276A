@@ -1,0 +1,29 @@
+In both terminals:
+
+	ssh ubuntu@192.168.1.141
+	
+	source /opt/ros/jazzy/setup.bash
+	source ~/ros2_ws/install/setup.bash
+
+	echo "ROS_DOMAIN_ID=$ROS_DOMAIN_ID  ROS_NAMESPACE=${ROS_NAMESPACE:-<none>}" #sanity check
+	to make sure both terminals are on the same domain
+
+
+In one terminal:
+
+	cd ~/ros2_ws
+	ros2 run robot_control motor_control
+
+In other terminal:
+
+	ros2 topic pub --once /motor_commands std_msgs/msg/Float32MultiArray "data: [0.2, 0.2]"
+
+
+
+for editing code:
+	cd ~/ros2_ws/src/robot_control
+	vim keyboard_control.py
+
+    Press i to enter insert mode (you can type/paste text).
+
+    Press Esc, then type :wq and hit Enter to save & exit.

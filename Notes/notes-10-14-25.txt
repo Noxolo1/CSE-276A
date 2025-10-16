@@ -1,0 +1,20 @@
+fine to "hack" robot with tape on wheels to reduce friction
+
+can "hack" keyboard control file to instead just give sequence of commands
+instead of current keyboard controls - should be able to complete full 
+traversal path with just commands in this file
+
+motor controller is the motor that is controlling the robot
+
+can hardcode motor_control file but this will create more work for future hws
+should probably use ros2 topic pub or keyboard_control (modified for sequence of points)
+
+for calibration:
+	issue sequence of commands, then measure distances from axis and then perform 
+	linear regression 
+	
+	5 or 6 motion commands at each step then run linear regression, can do the same 
+	thing for orientation
+	
+
+for hw2, can combine localization and planning node as they are "simple" to implement
