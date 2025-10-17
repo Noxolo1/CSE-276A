@@ -1,29 +1,77 @@
 In both terminals:
+	
+	sudo screen /dev/ttyACM* 115200 
+	
+	sudo nmtui
+	sudo nmcli dev wifi connect "Nate's iPhone" password "hockey123"
 
-	ssh ubuntu@192.168.1.141
+	Ctrl + A   then   K   then   Y - clears screen or can type exit in terminal
+
+	ssh ubuntu@192.168.1.141 - home network
+	ssh ubuntu@172.20.10.2 - hotspot
+	172.20.10.15
 	
 	source /opt/ros/jazzy/setup.bash
 	source ~/ros2_ws/install/setup.bash
 
-	echo "ROS_DOMAIN_ID=$ROS_DOMAIN_ID  ROS_NAMESPACE=${ROS_NAMESPACE:-<none>}" #sanity check
+	echo "ROS_DOMAIN_ID=$ROS_DOMAIN_ID" #sanity check
 	to make sure both terminals are on the same domain
+	
+	ros2 topic info /motor_commands # more sanity check to make sure subscriber and publisher active
 
 
 In one terminal:
 
 	cd ~/ros2_ws
 	ros2 run robot_control motor_control
+	
+	# substitue (shows command received)
+	ros2 run robot_control motor_control --ros-args --log-level motor_controller_node:=debug
+	ros2 run robot_control motor_control --ros-args -p serial_port:=/dev/ttyUSB0 -p baud:=115200 --log-level motor_controller_node:=debug
+
+	or 
+	
+	ros2 run robot_control keyboard_control
+	
+	after editing keyboard_control python file:
+	
+		cd ~/ros2_ws
+		source /opt/ros/jazzy/setup.bash
+		colcon build --packages-select robot_control
+		source install/setup.bash
+		
+		ros2 run robot_control motor_control  #launches motor controller (needs to be running for keyboard 
+		commands or really any commands you want to give)
+
 
 In other terminal:
 
 	ros2 topic pub --once /motor_commands std_msgs/msg/Float32MultiArray "data: [0.2, 0.2]"
+	
+	spin: ros2 topic pub /motor_commands std_msgs/msg/Float32MultiArray "{data: [0.50, -0.50]}" -r 20 --times 40
+
+	
+	Sequence mode: 
+	
+		ros2 run robot_control keyboard_control --mode sequence --waypoints ~/waypoints.txt
+
+	Keyboard mode (default keyboard control, wont work as i didnt install xorg yet)
+		
+		ros2 run robot_control keyboard_control --mode keyboard
 
 
-
-for editing code:
+for editing code in vim:
 	cd ~/ros2_ws/src/robot_control
 	vim keyboard_control.py
 
     Press i to enter insert mode (you can type/paste text).
 
     Press Esc, then type :wq and hit Enter to save & exit.
+    
+    https://vim.rtorr.com/
+    
+    https://vi.stackexchange.com/questions/9028/what-is-the-command-for-select-all-in-vim-and-vsvim
+    
+    
+    sudo dmesg -w | grep -Ei 'tty(USB|ACM)' 
+	udevadm info --query=all -n /dev/ttyUSB0 | egrep 'ID_MODEL|ID_VENDOR|ID_SERIAL'

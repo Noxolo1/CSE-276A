@@ -1,0 +1,147 @@
+need about 45-46 inches for robot center to be over 1m (39.37in) tape mark
+
+trials going 1m forward:
+
+	1: 
+		sequence = [
+            (0.20,  0.20, 1.75)
+        ]
+        
+        18 inches forward, need about 22 more inches, no noticeable deviation from path
+        
+        
+	2: 
+		sequence = [
+            (0.20,  0.20, 4)
+        ]
+        
+        need about 6-7 more inches forward, went 35.5in from robot center, turned about 2-3 deg to the right
+        
+        
+    3: 
+		sequence = [
+            (0.18,  0.20, 4.25)
+        ]
+        
+        need about 6 more inches forward, went 37in from robot center, turned about 1 deg to the left
+        
+    4:
+    
+        sequence = [
+            (0.19,  0.20, 4.5)
+        ]
+        
+        need about 2 more inches forward, went 38in from robot center, angular orientation looks good
+    
+    5: 
+    
+    	sequence = [
+            (0.19,  0.20, 4.7)
+        ]
+        
+        about 0.5 inches too far forward, went 40.5in from robot center, turned about 2 deg to the left
+        
+    6:
+    	
+    	sequence = [
+            (0.20,  0.20, 4.66)
+        ]
+        
+        about 0.5 inches too far forward, went 40in from robot center, turned about 1 deg to the left
+    
+    7:
+    
+    	sequence = [
+            (0.21,  0.20, 4.66)
+        ]
+        
+        about 1in too far forward, went 41.5in from robot center, angle level 
+        
+    8: 
+    	sequence = [
+            (0.21,  0.20, 4.6)
+        ]
+        
+        about 0.5in too far forward, went 41in from robot center, angle level
+        
+    9: 
+    	sequence = [
+            (0.21,  0.20, 4.57)
+        ]
+        
+    	distance and orientation about as good as i can get them here
+    	
+trials for rotating right 90deg:
+	
+	1: 
+		
+		sequence = [
+            (0.21,  -0.20, 1.5)
+        ]
+        
+        only turn about 1 degree
+        
+    2: 
+    
+    	sequence = [
+            (0.41,  -0.40, 2)
+        ]
+        
+        turned about 340 degrees
+    
+    3: 
+    	
+    	sequence = [
+            (0.31,  -0.30, 1)
+        ]
+    
+    turns about 75 degree
+    
+    4: 
+    
+    	sequence = [
+            (0.31,  -0.30, 1.25)
+        ]
+        
+        rotates about 100 degree
+    
+    5: 
+    	
+    	sequence = [
+            (0.31,  -0.30, 1.1)
+        ]
+        
+        rotates about 95 degree
+
+	6: 
+		
+		 sequence = [
+            (0.31,  -0.30, 1.05)
+        ]
+        
+        rotates about 92 degree
+        
+    7: 
+    	sequence = [
+            (0.31,  -0.30, 1)
+        ]
+        
+        rotates about 88 degree
+    	       
+    8: 
+    	sequence = [
+            (0.31,  -0.30, 1.01)
+        ]
+        
+        rotates about 88 degree
+    
+    9: 
+    	sequence = [
+            (0.31,  -0.30, 1.03)
+        ]
+        
+        rotates about 90 degree
+    	
+    	
+        
+    
