@@ -1,15 +1,21 @@
 In both terminals:
 	
-	sudo screen /dev/ttyACM* 115200 
+	sudo screen /dev/ttyACM* 115200
 	
 	sudo nmtui
 	sudo nmcli dev wifi connect "Nate's iPhone" password "hockey123"
+	hostname -I
 
 	Ctrl + A   then   K   then   Y - clears screen or can type exit in terminal
 
-	ssh ubuntu@192.168.1.141 - home network
-	ssh ubuntu@172.20.10.2 - hotspot
+	ssh -X ubuntu@192.168.1.141 - home network
+	ssh -X ubuntu@172.20.10.2 - hotspot
 	172.20.10.15
+	
+	ssh -X ubuntu@192.168.50.56 - home network 
+	
+	
+	ssh -X ubuntu@192.168.205.153
 	
 	source /opt/ros/jazzy/setup.bash
 	source ~/ros2_ws/install/setup.bash
@@ -18,6 +24,55 @@ In both terminals:
 	to make sure both terminals are on the same domain
 	
 	ros2 topic info /motor_commands # more sanity check to make sure subscriber and publisher active
+	
+	
+	For Camera: 
+	
+		ros2 launch robot_vision_camera robot_vision_camera.launch.py 
+			- ros2 run robot_vision_camera robot_vision_camera  # can be ran instead of above command
+			- ROS_DOMAIN_ID=135 rviz2 # can be ran to check camera is working
+		
+		For calibration: 
+			
+			ros2 run image_view image_saver image:=/camera/image_raw # offline calibration, saves raw images to use with calibration 
+			
+			ros2 run camera_calibration cameracalibrator --size WxH --square 0.0xy --no-service-check --ros-args -r image:=/image_raw 
+			# online calibration, --no-service-check to skip the startup check for the set_camera_info service.
+						
+			mkdir -p ~/calibration_images # create directory and move images
+			mv ~/left*.jpg ~/calibration_images/
+
+			
+			python3 ~/calibrate_cam.py # runs python script to calibrate based off of images generated with above command, will replace yaml
+			in correct directory
+
+
+	For Apriltag detection & pose estimation: 
+		
+		ros2 launch robot_vision_camera robot_vision_camera.launch.py 
+		ros2 launch apriltag_ros apriltag_launch.py 
+	
+		# sanity checks
+		ros2 topic hz /detections # size (should match your real printed size in meters)
+		ros2 topic echo /detections | head -n 40 # pose.pose.position.{x,y,z} (meters)
+		ros2 run rqt_image_view rqt_image_view # visualizes camera in gui for quick check
+		ros2 run tf2_tools view_frames # shows TF frames
+		ros2 run tf2_ros tf2_echo camera_frame tag_0 # shows pose estimate
+		ros2 topic echo /pose_estimated --once
+
+
+		ros2 launch robot_control static_frames.launch.py
+		ros2 run robot_control localization_node
+		ros2 run robot_control motor_control
+		ros2 run robot_control waypoint_follower
+		
+		ros2 run robot_control localization_node --ros-args \
+		  -p ignore_tag_yaw:=true \
+		  -p map_dx:=2.035796806 \
+		  -p map_dy:=-0.075874271 \
+		  -p map_dyaw:=2.284867264
+
+	
 
 
 In one terminal:

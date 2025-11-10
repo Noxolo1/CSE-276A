@@ -1,3 +1,6 @@
+# online calibration
+# tried both offline and onlien calibratioon but had better pose estimation with this file 
+
 %YAML:1.0
 ---
 image_width: 1280
@@ -8,8 +11,8 @@ camera_matrix: !!opencv-matrix
   rows: 3
   cols: 3
   dt: d
-  data: [490.980065, 1.448770, 639.427696,
-         0.0, 492.132778, 357.232355,
+  data: [660.5781736990879, 0.0, 667.2925595532455,
+         0.0, 661.9473202179337, 285.2436299300474,
          0.0, 0.0, 1.0]
 
 distortion_model: plumb_bob
@@ -17,7 +20,7 @@ distortion_coefficients: !!opencv-matrix
   rows: 1
   cols: 5
   dt: d
-  data: [0.487826, -1.851282, 1.209359, -0.068021, 0.0]
+  data: [-0.2948701659785963, 0.06381091109557724, 0.0010728960861932126, -0.003964879162233566, 0.0]
 
 rectification_matrix: !!opencv-matrix
   rows: 3
@@ -31,6 +34,6 @@ projection_matrix: !!opencv-matrix
   rows: 3
   cols: 4
   dt: d
-  data: [490.980065, 1.448770, 639.427696, 0.0,
-         0.0, 492.132778, 357.232355, 0.0,
-         0.0, 0.0, 1.0, 0.0]
+  data: [454.6195983886719, 0.0, 647.8514948695192, 0.0,
+         0.0, 583.3833618164062, 267.68906975271784, 0.0,
+         0.0, 0.0, 1.0, 0.0]  

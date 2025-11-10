@@ -29,6 +29,9 @@ setup(
             'motor_control = robot_control.motor_control:main',
             'keyboard_control = robot_control.keyboard_control:main',
             'velocity_control = robot_control.velocity_control:main',
+            'localization_node = robot_control.localization_node:main',
+            'waypoint_follower = robot_control.waypoint_follower:main',
+            'calibrate_velocity = robot_control.calibrate_velocity:main'
         ],
     },
 )

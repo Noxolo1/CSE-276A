@@ -1,0 +1,67 @@
+For HW2:
+
+	Files edited/added: 
+		
+		edited - tags_36h11.yaml 
+		edited - camera_parameter.yaml 
+		edited - setup.py 
+		added - static_frames.launch.py 
+		added - waypoint_controller.py
+		added - localization_node.py
+		
+		
+	Ros will give transform that specifies relationship between where april tag is and where camera is
+	
+	need a strategy for relationship between robot coordinate system and camera coordinate system
+		
+		- figure out how far it is
+		
+		- calibrate camera w/ april tags # currently calibrated with offline method, can try online method instead from piazza post if 
+		offline method is bad (chatgpt wrote python file for offline method although it essentially mirrors the opencv code)
+		
+		- can choose how many april tags to use and where to put them, include in report
+		why we put "landmarks" (april tags) where we did 
+		
+		- april tag family is tag36h11 w/ size 260mm x 208mm, 11 total tags (0-10) for now (can use more or less if needed)
+		
+		- waypoints: (0, 0, 0) -> (1, 0, 0) -> (1, 2, pi) -> (0, 0, 0)
+		
+		
+Current progress:
+
+	- calibrated offine first, then recalibrated with online method 
+	
+	- camera is recoginizing all 11 april tags (0-10)
+	
+	- camera 12.4cm high off ground, camera 9cm forward of robot center, camera centered in left and right direction, 
+	camera 6.8cm from edge of robot frame and 8.3cm from edge of robot tyre, robot center 8.5cm high off ground 
+	
+	- t_0 -> t_1 = 50 in 
+	  t_1 -> t_2 = 67 in 
+	  t_2 -> t_3 = 67 in 
+	  t_3 -> t_4 = 63 in 
+	  t_4 -> t_0 = 100 
+	
+	- world coord origin is at first starting waypoint (0,0,0) 
+	  distances from origin: 
+	  
+	  REP-103: (+X = forward, +Y = left, +Z = up)
+	  z value below is measured to base of black apriltag square
+	  complete square is 139mm x 139mm
+	  
+	  t_0: x = 25.25in , y = -27in , z = 9.5cm , yaw = 110 deg
+	  t_1: x = 76.25in , y = -5in , z = 9.5cm , yaw = 160 deg
+	  t_2: x = 87in , y = 60.5in , z = 10cm , yaw = 200 deg 
+	  t_3: x = 38.25in , y = 105.25in , z = 9.5cm , yaw = 270 deg
+	  t_4: x = -8in , y = 64.5in , z = 9.5cm , yaw = -20 deg
+	  	
+	
+	map → tag_i      (static from your static_frames.launch.py)
+	tag_i → camera_frame   (published by apriltag_ros, visible in /tf)
+	camera_frame → base_link   (static from your static_frames.launch.py)
+
+	
+	
+
+
+

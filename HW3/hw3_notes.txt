@@ -1,0 +1,88 @@
+HW3 notes - CSE 276a
+
+source /opt/ros/jazzy/setup.bash
+source ~/ros2_ws/install/setup.bash
+
+ros2 launch hw3_slam hw3_slam.launch.py
+
+ssh -X ubuntu@192.168.92.153 - jonathan's hotspot
+192.168.92.153
+
+ssh -X ubuntu@192.168.50.56 - kelly network
+
+192.168.1.163 - resnet ap
+
+scp ubuntu@192.168.92.153:/tmp/hw3_slam_logs/slam_log_20251109_205456.json .
+
+
+version 3:
+
+	cd ~/ros2_ws
+	colcon build --packages-select hw3_slam --symlink-install
+	source /opt/ros/jazzy/setup.bash
+	source ~/ros2_ws/install/setup.bash
+
+	terminal 1: 
+	
+	ros2 launch hw3_slam hw3_slam.launch.py
+	
+	terminal 2: 
+	
+	# Run square trajectory
+	ros2 run hw3_slam hw3_controller --ros-args -p trajectory:=square -p square_side:=0.9144
+	
+	
+	# run diamond traj
+	ros2 run hw3_slam hw3_controller --ros-args -p trajectory:=diamond -p diamond_half_diag:=0.5
+
+	
+	# OR run octagon trajectory
+	ros2 run hw3_slam hw3_controller --ros-args -p trajectory:=octagon -p octagon_radius:=1.2
+	
+	
+	
+	
+
+For any of these (linear or angular):
+
+Deadzone ↑
+
+More “kick”, less subtle.
+
+Helps with stiction, hurts fine control.
+
+Deadzone ↓
+
+Smoother, but might not move.
+
+Slope ↑
+
+Softer / slower response (for same commanded v or w).
+
+Use if robot overshoots.
+
+Slope ↓
+
+Stronger / faster response.
+
+Use if robot is sluggish.
+
+If you tell me “it’s doing X when I try Y” (e.g., spins in place on diamond, arcs too much on straight), I can point at exactly which of the four knobs to nudge and in which direction.	
+	
+	
+	
+# 1) Start clean
+unset RMW_IMPLEMENTATION
+
+# 2) Source whichever ROS you actually have installed
+# Check which exists:
+ls /opt/ros
+
+# Then do ONE of these (pick the one that exists):
+#source /opt/ros/humble/setup.bash   # if humble is there
+# or
+source /opt/ros/jazzy/setup.bash  # if jazzy is there
+
+# 3) Match your domain + allow non-localhost traffic
+export ROS_DOMAIN_ID=135
+export ROS_LOCALHOST_ONLY=0
