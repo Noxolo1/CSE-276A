@@ -18,10 +18,10 @@ class VelocityToMotorNode(Node):
         self.right_linear_deadzone = 0.09
         self.right_linear_slope = 2.5
 
-        self.left_angular_deadzone = 0.29
-        self.left_angular_slope = 16.0
-        self.right_angular_deadzone = 0.29
-        self.right_angular_slope = 16.0
+        self.left_angular_deadzone = 0.31
+        self.left_angular_slope = 14.0
+        self.right_angular_deadzone = 0.31
+        self.right_angular_slope = 14.0
 
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
         self.motor_pub = self.create_publisher(Float32MultiArray, '/motor_commands', 10)
