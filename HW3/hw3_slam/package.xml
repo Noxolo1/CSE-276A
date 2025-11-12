@@ -3,36 +3,29 @@
 <package format="3">
   <name>hw3_slam</name>
   <version>0.0.0</version>
-  <description>Homework 3 EKF-SLAM package</description>
+  <description>Homework 3 EKF SLAM package</description>
   <maintainer email="new002@ucsd.edu">root</maintainer>
   <license>MIT</license>
 
-  <!-- Core ROS2 dependencies -->
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
   
-  <!-- Geometry and transforms -->
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>tf_transformations</depend>
   
-  <!-- AprilTag detection messages -->
   <depend>apriltag_msgs</depend>
   
-  <!-- HW2 dependencies (motor control, velocity mapping, camera TF) -->
   <depend>hw_2_solution</depend>
   
-  <!-- Python dependencies for scipy (for Rotation) -->
   <exec_depend>python3-scipy</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
   
-  <!-- Build type -->
   <export>
     <build_type>ament_python</build_type>
   </export>
   
-  <!-- Test dependencies -->
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
