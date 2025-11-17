@@ -1,0 +1,21 @@
+hw4_planning/
+  package.xml
+  setup.py
+  setup.cfg              # optional; simple version below
+  resource/
+    hw4_planning
+  configs/
+    apriltags_position.yaml   # your updated tag map for HW4
+  launch/
+    hw4_planning.launch.py
+  hw4_planning/
+    __init__.py
+    config.py
+    planner_node.py
+
+
+
+
+colcon build --packages-select hw4_planning
+source install/setup.bash
+ros2 launch hw4_planning hw4_planning.launch.py

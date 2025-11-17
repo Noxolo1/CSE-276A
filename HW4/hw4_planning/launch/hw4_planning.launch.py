@@ -1,3 +1,4 @@
+# hw4_planning/launch/hw4_planning.launch.py
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import IncludeLaunchDescription, TimerAction
@@ -8,31 +9,40 @@ import os
 
 def generate_launch_description():
     """
-    Launch file for hw_2_solution package.
+    Launch file for hw4_planning package.
+
     Starts nodes in sequence:
     1. robot_vision_camera - camera driver
     2. apriltag_ros - AprilTag detection
-    3. [0.5s delay]
-    4. motor_control - communicates with robot hardware via serial
-    5. velocity_mapping - converts Twist commands to motor commands
-    6. camera_tf - static tf_node
-    7. hw2_solution - PID-based waypoint navigation
+    3. [5s delay]
+    4. motor_control (from hw_2_solution) - hardware interface
+    5. hw4_velocity_mapping (from hw4_planning) - tuned v->motor mapping
+    6. camera_tf (from hw_2_solution) - static tf for camera
+    7. hw4_planning_node - HW4 planner + HW2 controller
     """
-    
-    camera_pkg_path = FindPackageShare(package='robot_vision_camera').find('robot_vision_camera')
-    apriltag_pkg_path = FindPackageShare(package='apriltag_ros').find('apriltag_ros')
-    
-    camera_launch_file = os.path.join(camera_pkg_path, 'launch', 'robot_vision_camera.launch.py')
-    apriltag_launch_file = os.path.join(apriltag_pkg_path, 'launch', 'apriltag_launch.py')
-    
+
+    camera_pkg_path = FindPackageShare(
+        package='robot_vision_camera'
+    ).find('robot_vision_camera')
+    apriltag_pkg_path = FindPackageShare(
+        package='apriltag_ros'
+    ).find('apriltag_ros')
+
+    camera_launch_file = os.path.join(
+        camera_pkg_path, 'launch', 'robot_vision_camera.launch.py'
+    )
+    apriltag_launch_file = os.path.join(
+        apriltag_pkg_path, 'launch', 'apriltag_launch.py'
+    )
+
     camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(camera_launch_file)
     )
-    
+
     apriltag_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(apriltag_launch_file)
     )
-    
+
     motor_controller = TimerAction(
         period=5.0,
         actions=[
@@ -45,20 +55,20 @@ def generate_launch_description():
             )
         ]
     )
-    
+
     velocity_mapping = TimerAction(
         period=5.0,
         actions=[
             Node(
-                package='hw_2_solution',
-                executable='velocity_mapping',
-                name='velocity_mapping',
+                package='hw4_planning',
+                executable='hw4_velocity_mapping',
+                name='hw4_velocity_mapping',
                 output='screen',
                 emulate_tty=True,
             )
         ]
     )
-    
+
     camera_tf = Node(
         package='hw_2_solution',
         executable='camera_tf',
@@ -66,25 +76,32 @@ def generate_launch_description():
         output='screen',
         emulate_tty=True,
     )
-    
-    hw2_solution = TimerAction(
+
+    hw4_planning_node = TimerAction(
         period=10.0,
         actions=[
             Node(
-                package='hw_2_solution',
-                executable='hw2_solution',
-                name='hw2_solution',
+                package='hw4_planning',
+                executable='hw4_planning_node',
+                name='hw4_planning_node',
                 output='screen',
                 emulate_tty=True,
+                parameters=[
+                    {
+                        # Use 'safety' for max-clearance run,
+                        # and switch to 'fast' for minimum time/distance run.
+                        'planner_mode': 'safety',
+                    }
+                ],
             )
         ]
     )
-    
+
     return LaunchDescription([
         camera_launch,
         apriltag_launch,
         motor_controller,
         velocity_mapping,
         camera_tf,
-        hw2_solution,
+        hw4_planning_node,
     ])

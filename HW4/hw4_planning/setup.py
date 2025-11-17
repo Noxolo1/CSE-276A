@@ -1,6 +1,7 @@
+# hw4_planning/setup.py
 from setuptools import find_packages, setup
 
-package_name = 'hw_2_solution'
+package_name = 'hw4_planning'
 
 setup(
     name=package_name,
@@ -8,28 +9,23 @@ setup(
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
+         ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        # You can keep a copy of apriltags_position.yaml here if you like.
         ('share/' + package_name + '/configs', ['configs/apriltags_position.yaml']),
-        ('share/' + package_name + '/launch', ['launch/hw2_solution.launch.py']),
+        ('share/' + package_name + '/launch', ['launch/hw4_planning.launch.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Nate Wilson',
+    maintainer='nate wilson',
     maintainer_email='new002@ucsd.edu',
-    description='Homework 4 solution package',
+    description='CSE 276A HW4 planning package',
     license='MIT',
-    extras_require={
-        'test': [
-            'pytest',
-        ],
-    },
+    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'motor_control = hw_2_solution.motor_control:main',
-            'velocity_mapping = hw_2_solution.velocity_mapping:main',
-            'hw2_solution = hw_2_solution.hw2_solution:main',
-            'camera_tf = hw_2_solution.camera_tf:main',
+            'hw4_planning_node = hw4_planning.planner_node:main',
+            'hw4_velocity_mapping = hw4_planning.velocity_mapping:main',
         ],
     },
 )
