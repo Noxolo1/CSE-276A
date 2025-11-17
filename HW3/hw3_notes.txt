@@ -12,7 +12,7 @@ ssh -X ubuntu@192.168.50.56 - kelly network
 
 192.168.1.163 - resnet ap
 
-scp ubuntu@192.168.50.56:/tmp/hw3_slam_logs/slam_log_20251111_032256.json .
+scp ubuntu@192.168.50.56:/tmp/hw3_slam_logs/slam_log_20251111_203608.json .
 ls -lt /tmp/hw3_slam_logs # latest log at top
 
 
