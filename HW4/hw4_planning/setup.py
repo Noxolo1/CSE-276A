@@ -14,6 +14,7 @@ setup(
         # You can keep a copy of apriltags_position.yaml here if you like.
         ('share/' + package_name + '/configs', ['configs/apriltags_position.yaml']),
         ('share/' + package_name + '/launch', ['launch/hw4_planning.launch.py']),
+        ('share/' + package_name + '/launch', ['launch/waypoint_follower_launch.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -26,6 +27,8 @@ setup(
         'console_scripts': [
             'hw4_planning_node = hw4_planning.planner_node:main',
             'hw4_velocity_mapping = hw4_planning.velocity_mapping:main',
+            'waypoint_follower_node = hw4_planning.waypoint_follower_node:main',
+            'hw4_json_waypoint_follower = hw4_planning.json_waypoint_follower:main',
         ],
     },
 )

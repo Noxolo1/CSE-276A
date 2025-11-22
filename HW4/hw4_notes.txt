@@ -27,6 +27,10 @@ ros2 launch hw4_planning hw4_planning.launch.py
 ros2 run hw4_planning hw4_planning_node --ros-args -p planner_mode:=safety
 ros2 run hw4_planning hw4_planning_node --ros-args -p planner_mode:=fast
 
+ros2 launch hw4_planning waypoint_follower_launch.py waypoints_file:=my_waypoints.json
+
+ros2 run hw4_planning hw4_json_waypoint_follower \
+  --ros-args -p waypoints_json_path:=/home/ubuntu/ros2_ws/install/hw4_planning/lib/python3.12/site-packages/hw4_planning/hw4_waypoints_safety.json
 
 
 start point: (0,0)
