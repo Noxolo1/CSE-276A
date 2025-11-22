@@ -15,7 +15,266 @@ hw4_planning/
 
 
 
+source /opt/ros/jazzy/setup.bash
+source ~/ros2_ws/install/setup.bash
 
-colcon build --packages-select hw4_planning
-source install/setup.bash
+
+colcon build 
+source ~/ros2_ws/install/setup.bash
 ros2 launch hw4_planning hw4_planning.launch.py
+
+
+ros2 run hw4_planning hw4_planning_node --ros-args -p planner_mode:=safety
+ros2 run hw4_planning hw4_planning_node --ros-args -p planner_mode:=fast
+
+
+
+start point: (0,0)
+end point measured off start point: (65, 60.5)
+
+Tag measurements:
+
+	tag square: 14.6cm 
+
+	tag 7: 
+		x: -17.5 in 
+		y: - 7 in 
+		z: 0 in 
+		roll: 90
+		pitch: 0
+		yaw: 90
+	tag 3: 
+		x: + 9 in 
+		y: - 16 in 
+		z: 0 in
+		roll: 90
+		pitch: 0
+		yaw:  180
+ 	tag 1: 
+		x: 84 in 
+		y: -7 in 
+		z: 0 in
+		roll: 90
+		pitch: 0
+		yaw: -90
+	tag 2: 
+		x: 61 in 
+		y: -16 in 
+		z: 0 in
+		roll: 90
+		pitch: 0
+		yaw:  180
+	tag 4: 
+		x: 52 in 
+		y: 78.5 in 
+		z: 0 in
+		roll: 90
+		pitch: 0
+		yaw: 0
+	tag 0: 
+		x: 85 in 
+		y: 63 in 
+		z: 0 in
+		roll: 90
+		pitch: 0
+		yaw: -90
+	tag 8: 
+		x: 30 in 
+		y: 26.5 in 
+		z: 0 in
+		roll: 90
+		pitch: 0
+		yaw:  0
+	tag 11: 
+		x: 23 in 
+		y: 32 in 
+		z: 0 in
+		roll: 90
+		pitch: 0
+		yaw: -90
+	tag 9: 
+		x: 36 in 
+		y: 32 in 
+		z: 0 in
+		roll: 90
+		pitch: 0
+		yaw: 90
+	tag 10: 
+		x: 30 in 
+		y: 38 in 
+		z: 0 in
+		roll: 90
+		pitch: 0
+		yaw:  180
+	tag 5: 
+		x: 6 in 
+		y: 80 in 
+		z: 0 in 
+		roll: 90
+		pitch: 0
+		yaw: 0
+	tag 6: 
+		x: -16 in 
+		y: 65 in 
+		z: 0 in 
+		roll: 90
+		pitch: 0
+		yaw: 90
+		
+		
+		
+		
+		
+		
+		
+ubuntu@ubuntu:~$ ros2 topic echo /detections --once                                                                                            
+header:                                                                                                                                        
+  stamp:                                                                                                                                       
+    sec: 1763762508                                                                                                                            
+    nanosec: 161324366                                                                                                                         
+  frame_id: camera_frame                                                                                                                       
+detections:                                                                                                                                    
+- family: tag36h11                                                                                                                             
+  id: 0                                                                                                                                        
+  hamming: 0                                                                                                                                   
+  goodness: 0.0                                                                                                                                
+  decision_margin: 215.36012268066406                                                                                                          
+  centre:                                                                                                                                      
+    x: 203.7518445202248                                                                                                                       
+    y: 265.35660861050076                                                                                                                      
+  corners:                                                                                                                                     
+  - x: 190.2680206298828                                                                                                                       
+    y: 283.56088256835943                                                                                                                      
+  - x: 216.42451477050787                                                                                                                      
+    y: 283.29058837890625                                                                                                                      
+  - x: 217.7328643798828                                                                                                                       
+    y: 246.48107910156244                                                                                                                      
+  - x: 191.09432983398432                                                                                                                      
+    y: 247.44407653808597                                                                                                                      
+  homography:                                                                                                                                  
+  - 11.291290826762832                                                                                                                         
+  - 1.251888241272271                                                                                                                          
+  - 203.7518445202248                                                                                                                          
+  - -2.786547178078312                                                                                                                         
+  - 20.551028434506975                                                                                                                         
+  - 265.35660861050076                                                                                                                         
+  - -0.009350658386259515                                                                                                                      
+  - 0.00875233807866746                                                                                                                        
+  - 1.0                                                                                                                                        
+- family: tag36h11                                                                                                                             
+  id: 1                
+   hamming: 0                                                                                                                                   
+  goodness: 0.0                                                                                                                                
+  decision_margin: 149.2303924560547
+  centre:
+    x: 635.8511012789501
+    y: 254.99345861412192
+  corners:
+  - x: 613.9431152343749
+    y: 277.4934997558593
+  - x: 658.1641845703122
+    y: 276.81802368164057
+  - x: 657.8867797851564
+    y: 232.3622741699219
+  - x: 613.1226806640627
+    y: 232.7626495361328
+  homography:
+  - 24.253066230848844
+  - 4.129089519295126
+  - 635.8511012789501
+  - 0.5353876697045293
+  - 23.841775492645866
+  - 254.99345861412192
+  - 0.003157695809557365
+  - 0.006063517682550221
+  - 1.0
+- family: tag36h11
+  id: 8
+  hamming: 0
+  goodness: 0.0
+  decision_margin: 178.9411163330078
+  centre:
+    x: 102.72982106608083
+    y: 243.02793420964662
+  corners:
+  - x: 69.36517333984378
+    y: 302.19839477539057
+  - x: 130.3307800292969
+    y: 296.3540344238281
+  - x: 130.23478698730466
+    y: 194.24931335449222
+  - x: 72.14459228515624
+    y: 183.9361114501953
+  homography:
+  - 37.16378268805431
+  - -2.8783814501507057
+  - 102.72982106608083
+  - 19.223299155230297
+  - 49.302291429004555
+  - 243.02793420964662
+  - 0.0737772050680445
+  - -0.02248891942143856
+  - 1.0
+---
+
+		
+		
+		
+		
+ubuntu@ubuntu:~$ ros2 topic echo /tf --once                                                                                                    
+transforms:                                                                                                                                    
+- header:                                                                                                                                      
+    stamp:                                                                                                                                     
+      sec: 1763762923                                                                                                                          
+      nanosec: 983708565                                                                                                                       
+    frame_id: camera_frame                                                                                                                     
+  child_frame_id: tag_0                                                                                                                        
+  transform:                                                                                                                                   
+    translation:                                                                                                                               
+      x: -2.3709256512610586                                                                                                                   
+      y: -0.007613072313097522                                                                                                                 
+      z: 2.3282089576724627                                                                                                                    
+    rotation:                                                                                                                                  
+      x: -0.9988941950482356                                                                                                                   
+      y: 0.0077085915248654045
+      z: 0.04093009173574785
+      w: -0.021810371526945607
+- header:
+    stamp:
+      sec: 1763762923
+      nanosec: 983708565
+    frame_id: camera_frame
+  child_frame_id: tag_1
+  transform:
+    translation:
+      x: -0.10709217864958191
+      y: -0.03567026112002401
+      z: 1.503139055617994
+    rotation:
+      x: 0.9481762691700084
+      y: -0.019514138346040065
+      z: 0.03665889283124797
+      w: 0.3150191844377778
+- header:
+    stamp:
+      sec: 1763762923
+	  nanosec: 983708565
+    frame_id: camera_frame
+  child_frame_id: tag_8
+  transform:
+    translation:
+      x: -0.9599380871133948
+      y: -0.030197344068962875
+      z: 0.775327531805167
+    rotation:
+      x: 0.532029687279331
+      y: 0.00421246343668519
+      z: 0.8466338906682047
+      w: -0.011735509246319942
+---
+
+		
+		
+		
+		
+		
