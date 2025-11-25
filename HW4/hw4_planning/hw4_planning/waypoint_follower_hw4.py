@@ -335,12 +335,7 @@ class WaypointFollowerHW4(Node):
             y = self.pose.pose.position.y
             q = self.pose.pose.orientation
             (_, _, yaw) = euler_from_quaternion([q.x, q.y, q.z, q.w])
-
-        if self.wpt_i < len(self.waypoints):
-            gx, gy, gyaw = self.waypoints[self.wpt_i]
-        else:
-            gx, gy, gyaw = self.waypoints[-1]
-
+        gx, gy, gyaw = self.waypoints[min(self.wpt_i, len(self.waypoints) - 1)]
         self.log_row(self.state, x, y, yaw, gx, gy, gyaw, rho, eyaw, L, R)
 
     def destroy_node(self):
