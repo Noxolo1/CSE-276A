@@ -128,5 +128,5 @@ MAP_MARGIN_M = 0.20          # 20 cm
 # How much to "inflate" obstacles (in grid cells) for each planner:
 # - Safety planner: more inflation -> more clearance, longer path
 # - Fast planner: less inflation -> shorter path, closer to obstacle
-SAFETY_INFLATION_RADIUS_CELLS = 3
+SAFETY_INFLATION_RADIUS_CELLS = 5 # was 3
 FAST_INFLATION_RADIUS_CELLS = 1

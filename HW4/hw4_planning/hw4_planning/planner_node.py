@@ -671,6 +671,13 @@
 #     main()
 
 
+
+
+
+
+
+
+
 # hw4_planning/hw4_planning/planner_node.py
 #!/usr/bin/env python3
 import math
@@ -1086,7 +1093,7 @@ class Hw4PlanningNode(Hw2SolutionNode):
             return
 
         grid_path = self.simplify_grid_path(grid_path)
-        self.get_logger().info(f"Grid path has {len(grid_path)} points.")
+        self.get_logger().info(f"Grid path has {len(grid_path)} grid points.")
 
         # 5. Convert grid path to continuous world-space waypoints.
         waypoints_list: List[List[float]] = []
@@ -1103,9 +1110,21 @@ class Hw4PlanningNode(Hw2SolutionNode):
 
             waypoints_list.append([x, y, yaw])
 
-            # 5.5 Save waypoints to JSON for debugging / analysis
+        # 5.1 Downsample to a fixed number of waypoints (e.g., 10)
+        target_waypoints = 14
+        if len(waypoints_list) > target_waypoints:
+            # Pick evenly spaced indices from the full path
+            idxs = np.linspace(0, len(waypoints_list) - 1, target_waypoints)
+            idxs = np.round(idxs).astype(int)
+            waypoints_list = [waypoints_list[i] for i in idxs]
+
+        self.get_logger().info(
+            f"Using {len(waypoints_list)} waypoints after downsampling "
+            f"(target={target_waypoints})."
+        )
+
+        # 5.5 Save waypoints to JSON for debugging / analysis
         try:
-            # Convert to a nicer dict format
             waypoints_dict = [
                 {
                     "index": i,
@@ -1116,9 +1135,10 @@ class Hw4PlanningNode(Hw2SolutionNode):
                 for i, (x, y, yaw) in enumerate(waypoints_list)
             ]
 
-            # Save next to this file (in the hw4_planning package directory)
             out_dir = os.path.dirname(os.path.abspath(__file__))
-            out_path = os.path.join(out_dir, f"hw4_waypoints_{self.planner_mode}.json")
+            out_path = os.path.join(
+                out_dir, f"hw4_waypoints_{self.planner_mode}.json"
+            )
 
             with open(out_path, "w") as f:
                 json.dump(waypoints_dict, f, indent=2)
@@ -1128,7 +1148,6 @@ class Hw4PlanningNode(Hw2SolutionNode):
             )
         except Exception as e:
             self.get_logger().warn(f"Failed to save waypoints JSON: {e!r}")
-
 
         # 6. Override the HW2 solution internals.
         self.waypoints = np.array(waypoints_list, dtype=float)
@@ -1143,6 +1162,7 @@ class Hw4PlanningNode(Hw2SolutionNode):
             f"Start: ({start_x:.3f}, {start_y:.3f}), "
             f"Goal: ({goal_x:.3f}, {goal_y:.3f})"
         )
+
 
 
 def main(args=None) -> None:

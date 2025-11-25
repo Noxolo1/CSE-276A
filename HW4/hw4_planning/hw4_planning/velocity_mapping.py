@@ -24,16 +24,25 @@ class VelocityToMotorNode(Node):
         self.cmd_max = 1.5
 
         # Tuned linear mapping parameters
-        self.left_linear_deadzone = 0.09
-        self.left_linear_slope = 2.5
-        self.right_linear_deadzone = 0.09
-        self.right_linear_slope = 2.5
+        # self.left_linear_deadzone = 0.09
+        # self.left_linear_slope = 2.5
+        # self.right_linear_deadzone = 0.09
+        # self.right_linear_slope = 2.5
 
-        # Tuned angular mapping parameters (from your HW3 mapping)
-        self.left_angular_deadzone = 0.31
-        self.left_angular_slope = 14.0
-        self.right_angular_deadzone = 0.31
-        self.right_angular_slope = 14.0
+        # # Tuned angular mapping parameters (from your HW3 mapping)
+        # self.left_angular_deadzone = 0.31
+        # self.left_angular_slope = 14.0
+        # self.right_angular_deadzone = 0.31
+        # self.right_angular_slope = 14.0
+        self.left_linear_deadzone = 0.13
+        self.left_linear_slope = 2.5 
+        self.right_linear_deadzone = 0.11
+        self.right_linear_slope = 2.5
+        
+        self.left_angular_deadzone = 0.22
+        self.left_angular_slope = 2.0
+        self.right_angular_deadzone = 0.22
+        self.right_angular_slope = 2.0
 
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
         self.motor_pub = self.create_publisher(Float32MultiArray,

@@ -31,6 +31,8 @@ ros2 launch hw4_planning waypoint_follower_launch.py waypoints_file:=my_waypoint
 
 ros2 run hw4_planning hw4_json_waypoint_follower \
   --ros-args -p waypoints_json_path:=/home/ubuntu/ros2_ws/install/hw4_planning/lib/python3.12/site-packages/hw4_planning/hw4_waypoints_safety.json
+  
+  ros2 launch hw4_planning waypoint_follower_launch.py waypoint_file:=/home/ubuntu/ros2_ws/install/hw4_planning/lib/python3.12/site-packages/hw4_planning/hw4_waypoints_safety.json
 
 
 start point: (0,0)
