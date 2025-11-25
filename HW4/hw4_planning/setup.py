@@ -48,10 +48,12 @@ setup(
         ('share/' + package_name, ['package.xml']),
         # You can keep a copy of apriltags_position.yaml here if you like.
         ('share/' + package_name + '/configs', ['configs/apriltags_position.yaml']),
-        ('share/' + package_name + '/launch', ['launch/hw4_planning.launch.py']),
-        ('share/' + package_name + '/launch', ['launch/waypoint_follower_launch.py']),
+        ('share/' + package_name + '/launch', ['launch/hw4_planning.launch.py','launch/hw4_astar_planning.launch.py','launch/waypoint_follower_launch.py']),
     ],
-    install_requires=['setuptools'],
+    # runtime dependencies installed via ROS package manager (package.xml).
+    # Include minimal pip-installable requirements so `python setup.py develop` works
+    # in a vanilla environment for offline testing.
+    install_requires=['setuptools', 'numpy', 'scipy'],
     zip_safe=True,
     maintainer='nate wilson',
     maintainer_email='new002@ucsd.edu',
@@ -61,9 +63,10 @@ setup(
     entry_points={
         'console_scripts': [
             'planning_node = hw4_planning.planning_node:main',
-            'localization_hw4_node = hw4_planning.localization_hw4:main',
+            'localization_hw4 = hw4_planning.localization_hw4:main',
             'waypoint_follower_hw4 = hw4_planning.waypoint_follower_hw4:main',
-            'motor_controller_node = hw4_planning.motor_control:main',
+            # velocity mapping node (converts /cmd_vel -> /motor_commands)
+            'velocity_mapping = hw4_planning.velocity_mapping:main',
         ],
     },
 )
