@@ -60,9 +60,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'hw4_planning_node = hw4_planning.planner_node:main',
-            'hw4_velocity_mapping = hw4_planning.velocity_mapping:main',
-            'waypoint_follower = hw4_planning.waypoint_follower:main',
+            'planning_node = hw4_planning.planning_node:main',
+            'localization_hw4_node = hw4_planning.localization_hw4:main',
+            'waypoint_follower_hw4 = hw4_planning.waypoint_follower_hw4:main',
+            'motor_controller_node = hw4_planning.motor_control:main',
         ],
     },
 )
