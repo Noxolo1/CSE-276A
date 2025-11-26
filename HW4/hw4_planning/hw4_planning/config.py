@@ -37,7 +37,7 @@ OBSTACLE_TAG_IDS = (8, 9, 10, 11)
 
 # resolution of the occupancy grid in meters/cell
 GRID_RESOLUTION = 0.02 # 2 cm cells
-MAP_MARGIN_M = 0.20 
+MAP_MARGIN_M = 0.10 
 
 # safety path: more inflation -> more clearance, drive longer path
 # fast path: less inflation -> shorter path, drive closer to obstacle
