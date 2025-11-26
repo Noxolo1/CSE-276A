@@ -1,4 +1,3 @@
-# hw4_planning/launch/hw4_planning.launch.py
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import IncludeLaunchDescription, TimerAction
@@ -9,16 +8,14 @@ import os
 
 def generate_launch_description():
     """
-    Launch file for hw4_planning package.
-
-    Starts nodes in sequence:
-    1. robot_vision_camera - camera driver
-    2. apriltag_ros - AprilTag detection
-    3. [5s delay]
-    4. motor_control (from hw_2_solution) - hardware interface
-    5. hw4_velocity_mapping (from hw4_planning) - tuned v->motor mapping
-    6. camera_tf (from hw_2_solution) - static tf for camera
-    7. hw4_planning_node - HW4 planner + HW2 controller
+    starts nodes in sequence:
+    1. robot_vision_camera 
+    2. apriltag_ros
+    3. 5s delay
+    4. motor_control
+    5. hw4_velocity_mapping
+    6. camera_tf 
+    7. hw4_planning_node
     """
 
     camera_pkg_path = FindPackageShare(
@@ -88,8 +85,6 @@ def generate_launch_description():
                 emulate_tty=True,
                 parameters=[
                     {
-                        # Use 'safety' for max-clearance run,
-                        # and switch to 'fast' for minimum time/distance run.
                         'planner_mode': 'safety',
                     }
                 ],

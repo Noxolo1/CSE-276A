@@ -9,10 +9,7 @@ from math import sin, cos
 import json
 import os
 
-"""
-The class of the pid controller for differential drive robot.
-Reused from hw1_solution.py
-"""
+# PID controller for HW4, reused a lot of HW2 solution
 class PIDcontroller:
     def __init__(self, Kp, Ki, Kd):
         self.Kp = Kp
@@ -25,18 +22,11 @@ class PIDcontroller:
         self.maximumValue = 0.2
 
     def setTarget(self, state):
-        """
-        set the target pose.
-        """
         self.I = np.array([0.0, 0.0]) 
         self.lastError = np.array([0.0, 0.0])
         self.target = np.array(state)
 
     def getError(self, currentState, targetState):
-        """
-        return the error between current and target state
-        for differential drive: distance error and heading error
-        """
         delta_x = targetState[0] - currentState[0]
         delta_y = targetState[1] - currentState[1]
         
@@ -48,7 +38,6 @@ class PIDcontroller:
         heading_error = desired_heading - currentState[2]
         heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
         
-        # When close to target, switch to orienting to final yaw
         if abs(distance) < 0.05:
             heading_error = targetState[2] - currentState[2]
             heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
@@ -57,16 +46,9 @@ class PIDcontroller:
         return np.array([distance, heading_error])
 
     def setMaximumUpdate(self, mv):
-        """
-        set maximum velocity for stability.
-        """
         self.maximumValue = mv
 
     def update(self, currentState):
-        """
-        calculate the update value based on PID control
-        Returns: [linear_velocity, angular_velocity]
-        """
         e = self.getError(currentState, self.target)
 
         P = self.Kp * e
@@ -93,7 +75,7 @@ class WaypointFollowerNode(Node):
     def __init__(self):
         super().__init__('waypoint_follower_node')
         
-        # Declare parameter for waypoint file path
+        # parameter for waypoint data 
         self.declare_parameter('waypoint_file', 'hw4_waypoints_safety.json')
         
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
@@ -103,22 +85,21 @@ class WaypointFollowerNode(Node):
         self.odom_frame = 'odom'
         self.base_frame = 'base_link'
         
-        # Load waypoints from JSON file
         self.waypoints = self.load_waypoints()
         
         if len(self.waypoints) == 0:
-            self.get_logger().error('No waypoints loaded! Exiting.')
+            self.get_logger().error('No waypoints loaded')
             return
         
         self.get_logger().info(f'Loaded {len(self.waypoints)} waypoints')
         
         self.pid = PIDcontroller(0.5, 0.01, 0.005)
         
-        # Initialize at first waypoint position
+        # init at first waypoint 
         self.current_state = np.array([
             self.waypoints[0][0],  # x
             self.waypoints[0][1],  # y  
-            self.waypoints[0][2]   # yaw
+            self.waypoints[0][2]   # orientation
         ])
         
         self.current_waypoint_idx = 0
@@ -129,30 +110,22 @@ class WaypointFollowerNode(Node):
         self.dt = 0.1
         self.control_timer = self.create_timer(self.dt, self.control_loop)
         
-        # Control stages: 'rotate_to_goal', 'drive', 'rotate_to_orient'
         self.stage = 'rotate_to_goal'
         self.fixed_rotation_vel = 0.785  # rad/s
         
-        self.get_logger().info('Waypoint Follower Node started')
+        self.get_logger().info('waypoint follower node started')
 
-        # Orientation logging: actual vs desired
+        # orientation logging used for debugging 
         self.orientation_log = []
-        # Where to save the log on the Pi
         self.orientation_log_path = os.path.expanduser(
             "~/ros2_ws/rubikpi_ros2/hw4_planning/hw4_orientation_log.json"
         )
 
         
     def load_waypoints(self):
-        """
-        Load waypoints from JSON file.
-        Returns: numpy array of waypoints [[x, y, yaw], ...]
-        """
         waypoint_file = self.get_parameter('waypoint_file').value
         
-        # Try to find the file
         if not os.path.exists(waypoint_file):
-            # Try in common locations
             possible_paths = [
                 waypoint_file,
                 os.path.join(os.getcwd(), waypoint_file),
@@ -164,7 +137,7 @@ class WaypointFollowerNode(Node):
                     waypoint_file = path
                     break
             else:
-                self.get_logger().error(f'Could not find waypoint file: {waypoint_file}')
+                self.get_logger().error(f'Couldnt find waypoint file: {waypoint_file}')
                 return np.array([])
         
         self.get_logger().info(f'Loading waypoints from: {waypoint_file}')
@@ -257,13 +230,7 @@ class WaypointFollowerNode(Node):
         
     
     def log_orientation_sample(self, stage, current_wp, desired_heading):
-        """
-        Store a single orientation sample:
-        - actual theta from dead-reckoning
-        - desired heading towards waypoint position
-        - desired yaw from the waypoint's planned orientation
-        """
-        # ROS time in seconds
+        # logs a single orientation at a given timestep
         t = self.get_clock().now().nanoseconds / 1e9
 
         entry = {
@@ -278,9 +245,6 @@ class WaypointFollowerNode(Node):
         self.orientation_log.append(entry)
 
     def save_orientation_log(self):
-        """
-        Write the collected orientation samples to a JSON file.
-        """
         if not self.orientation_log:
             return
 
@@ -288,81 +252,13 @@ class WaypointFollowerNode(Node):
             with open(self.orientation_log_path, "w") as f:
                 json.dump(self.orientation_log, f, indent=2)
             self.get_logger().info(
-                f"Saved {len(self.orientation_log)} orientation samples to "
-                f"'{self.orientation_log_path}'."
+                f"saved {len(self.orientation_log)} orientation samples to "
+                f"'{self.orientation_log_path}'"
             )
         except Exception as e:
-            self.get_logger().warn(f"Failed to save orientation log: {e!r}")
+            self.get_logger().warn(f"failed to save orientation log: {e!r}")
 
         
-    # def control_loop(self):
-    #     """
-    #     Main control loop with three stages: rotate to goal, drive, rotate to orientation
-    #     """
-    #     if self.current_waypoint_idx >= len(self.waypoints):
-    #         self.get_logger().info('All waypoints reached! Stopping robot.')
-    #         self.stop_robot()
-    #         self.broadcast_tf()
-    #         return
-
-    #     current_wp = self.waypoints[self.current_waypoint_idx]
-        
-    #     # Initialize target on new waypoint
-    #     if not self.waypoint_reached:
-    #         self.pid.setTarget(current_wp)
-    #         self.waypoint_reached = True
-    #         self.stage = 'rotate_to_goal'
-
-    #     # Calculate position error
-    #     delta_x = current_wp[0] - self.current_state[0]
-    #     delta_y = current_wp[1] - self.current_state[1]
-    #     position_error = np.sqrt(delta_x**2 + delta_y**2)
-        
-    #     twist_msg = Twist()
-        
-    #     # Stage 1: Rotate to face the goal
-    #     if self.stage == 'rotate_to_goal':
-    #         desired_heading = self.get_desired_heading_to_goal(current_wp)
-    #         heading_error = desired_heading - self.current_state[2]
-    #         heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
-            
-    #         if abs(heading_error) < 0.05:
-    #             self.stage = 'drive'
-    #             twist_msg.angular.z = 0.0
-    #         else:
-    #             twist_msg.angular.z = float(self.get_rotation_direction(heading_error))
-        
-    #     # Stage 2: Drive towards the goal
-    #     elif self.stage == 'drive':
-    #         if position_error < self.tolerance:
-    #             self.stage = 'rotate_to_orient'
-    #             twist_msg.linear.x = 0.0
-    #         else:
-    #             update_value = self.pid.update(self.current_state)
-    #             twist_msg.linear.x = float(update_value[0])
-        
-    #     # Stage 3: Rotate to target orientation
-    #     elif self.stage == 'rotate_to_orient':
-    #         heading_error = current_wp[2] - self.current_state[2]
-    #         heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
-            
-    #         if abs(heading_error) < self.angle_tolerance:
-    #             # Move to next waypoint
-    #             self.get_logger().info(
-    #                 f'Reached waypoint {self.current_waypoint_idx} at '
-    #                 f'({current_wp[0]:.3f}, {current_wp[1]:.3f})'
-    #             )
-    #             self.current_waypoint_idx += 1
-    #             self.waypoint_reached = False
-    #             twist_msg.angular.z = 0.0
-    #         else:
-    #             twist_msg.angular.z = float(self.get_rotation_direction(heading_error))
-        
-    #     # Update pose and publish
-    #     self.update_dead_reckoning(twist_msg.linear.x, twist_msg.angular.z)
-    #     self.broadcast_tf()
-    #     self.cmd_vel_pub.publish(twist_msg)
-
     def control_loop(self):
         """
         Main control loop with three stages: rotate to goal, drive, rotate to orientation
@@ -371,18 +267,17 @@ class WaypointFollowerNode(Node):
             self.get_logger().info('All waypoints reached! Stopping robot.')
             self.stop_robot()
             self.broadcast_tf()
-            self.save_orientation_log()  # <-- save when done
+            self.save_orientation_log() 
             return
 
         current_wp = self.waypoints[self.current_waypoint_idx]
         
-        # Initialize target on new waypoint
         if not self.waypoint_reached:
             self.pid.setTarget(current_wp)
             self.waypoint_reached = True
             self.stage = 'rotate_to_goal'
 
-        # Calculate position error
+        # calculate position error
         delta_x = current_wp[0] - self.current_state[0]
         delta_y = current_wp[1] - self.current_state[1]
         position_error = np.sqrt(delta_x**2 + delta_y**2)
@@ -395,7 +290,7 @@ class WaypointFollowerNode(Node):
             heading_error = desired_heading - self.current_state[2]
             heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
 
-            # Log actual vs desired orientation
+            # log actual vs desired orientation
             self.log_orientation_sample(self.stage, current_wp, desired_heading)
             
             if abs(heading_error) < 0.05:
@@ -406,10 +301,9 @@ class WaypointFollowerNode(Node):
         
         # Stage 2: Drive towards the goal
         elif self.stage == 'drive':
-            # Desired heading is still "point at the waypoint position"
             desired_heading = self.get_desired_heading_to_goal(current_wp)
 
-            # Log actual vs desired orientation while driving
+            # log actual vs desired orientation while driving
             self.log_orientation_sample(self.stage, current_wp, desired_heading)
 
             if position_error < self.tolerance:
@@ -421,16 +315,15 @@ class WaypointFollowerNode(Node):
         
         # Stage 3: Rotate to target orientation
         elif self.stage == 'rotate_to_orient':
-            # Here, the "desired" orientation is the waypoint's planned yaw
+
             desired_heading = self.get_desired_heading_to_goal(current_wp)
             heading_error = current_wp[2] - self.current_state[2]
             heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
 
-            # Log actual vs both: heading-to-waypoint and final yaw
+            # log actual vs both heading-to-waypoint and final yaw
             self.log_orientation_sample(self.stage, current_wp, desired_heading)
             
             if abs(heading_error) < self.angle_tolerance:
-                # Move to next waypoint
                 self.get_logger().info(
                     f'Reached waypoint {self.current_waypoint_idx} at '
                     f'({current_wp[0]:.3f}, {current_wp[1]:.3f})'
@@ -441,33 +334,16 @@ class WaypointFollowerNode(Node):
             else:
                 twist_msg.angular.z = float(self.get_rotation_direction(heading_error))
         
-        # Update pose and publish
         self.update_dead_reckoning(twist_msg.linear.x, twist_msg.angular.z)
         self.broadcast_tf()
         self.cmd_vel_pub.publish(twist_msg)
 
     
     def stop_robot(self):
-        """
-        Stop the robot by publishing zero velocities
-        """
         twist_msg = Twist()
         self.cmd_vel_pub.publish(twist_msg)
 
 
-# def main(args=None):
-#     rclpy.init(args=args)
-#     node = WaypointFollowerNode()
-    
-#     try:
-#         rclpy.spin(node)
-#     except KeyboardInterrupt:
-#         node.get_logger().info('Stopped by keyboard interrupt')
-#     finally:
-#         node.stop_robot()
-#         node.save_orientation_log()
-#         node.destroy_node()
-#         rclpy.shutdown()
 def main(args=None):
     rclpy.init(args=args)
     node = WaypointFollowerNode()
@@ -477,17 +353,15 @@ def main(args=None):
     except KeyboardInterrupt:
         node.get_logger().info('Stopped by keyboard interrupt')
     finally:
-        # 1) Save log first – this does not depend on ROS being alive
         try:
             node.save_orientation_log()
         except Exception as e:
-            node.get_logger().warn(f"Failed to save orientation log in finally: {e!r}")
+            node.get_logger().warn(f"Failed to save orientation log in: {e!r}")
 
-        # 2) Now *try* to stop the robot, but don't crash if ROS is already shutting down
         try:
             node.stop_robot()
         except Exception as e:
-            node.get_logger().warn(f"Failed to stop robot cleanly: {e!r}")
+            node.get_logger().warn(f"Failed to stop robot: {e!r}")
 
         node.destroy_node()
         rclpy.shutdown()
