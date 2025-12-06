@@ -5,37 +5,36 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 import os
 
-
 def generate_launch_description():
-    """
-    Start nodes in sequence for HW5 coverage:
-    1. robot_vision_camera
-    2. apriltag_ros
-    3. after 5s: motor_control + hw4_velocity_mapping
-    4. after 10s: hw5_coverage_node
-    """
-
-    # Camera pipeline
-    camera_pkg_path = FindPackageShare('robot_vision_camera').find('robot_vision_camera')
-    camera_launch_file = os.path.join(
-        camera_pkg_path, 'launch', 'robot_vision_camera.launch.py'
-    )
-
+    # Camera + AprilTags (same as HW2/HW3/HW4; adjust to your actual file names)
+    camera_pkg = FindPackageShare('robot_vision_camera').find('robot_vision_camera')
     camera_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(camera_launch_file)
+        PythonLaunchDescriptionSource(
+            os.path.join(camera_pkg, 'launch', 'robot_vision_camera.launch.py')
+        )
     )
 
-    # AprilTag detection
-    apriltag_pkg_path = FindPackageShare('apriltag_ros').find('apriltag_ros')
-    apriltag_launch_file = os.path.join(
-        apriltag_pkg_path, 'launch', 'apriltag_launch.py'
-    )
-
+    apriltag_pkg = FindPackageShare('apriltag_ros').find('apriltag_ros')
     apriltag_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(apriltag_launch_file)
+        PythonLaunchDescriptionSource(
+            os.path.join(apriltag_pkg, 'launch', 'apriltag_launch.py')
+        )
     )
 
-    # Motor controller on the RubikPi (same as previous HWs)
+    # Static TF base_link -> camera_frame (HW2 reference node)
+    camera_tf = TimerAction(
+        period=5.0,
+        actions=[
+            Node(
+                package='hw_2_solution',
+                executable='camera_tf',
+                name='camera_tf',
+                output='screen',
+                emulate_tty=True,
+            )
+        ]
+    )
+
     motor_controller = TimerAction(
         period=5.0,
         actions=[
@@ -49,40 +48,19 @@ def generate_launch_description():
         ]
     )
 
-    # Reuse your HW4 velocity mapping node
-    # velocity_mapping = TimerAction(
-    #     period=5.0,
-    #     actions=[
-    #         Node(
-    #             package='hw4_planning',
-    #             executable='hw4_velocity_mapping',
-    #             name='hw4_velocity_mapping',
-    #             output='screen',
-    #             emulate_tty=True,
-    #         )
-    #     ]
-    # )
     velocity_mapping = TimerAction(
         period=5.0,
         actions=[
             Node(
                 package='hw5_coverage',
-                executable='hw5_velocity_mapping',
+                executable='hw5_velocity_mapping',  # from earlier
                 name='hw5_velocity_mapping',
                 output='screen',
                 emulate_tty=True,
-                parameters=[
-                    # You can override any of the defaults here if you want:
-                    # {'left_linear_deadzone': 0.13},
-                    # {'left_linear_slope': 3.5},
-                    # ...
-                ],
             )
         ]
     )
 
-
-    # HW5 coverage controller
     coverage_node = TimerAction(
         period=10.0,
         actions=[
@@ -93,12 +71,8 @@ def generate_launch_description():
                 output='screen',
                 emulate_tty=True,
                 parameters=[
-                    # where to log trajectories (used later in your report)
                     {'trajectory_log_file': 'hw5_coverage_trajectory.json'},
-                    # tune these if needed
-                    {'explore_speed': 0.15},
-                    {'boundary_margin': 0.15},
-                    {'lost_pose_timeout': 2.0},
+                    # you can also override k_v, k_w, explore_speed, etc. here
                 ],
             )
         ]
@@ -107,6 +81,7 @@ def generate_launch_description():
     return LaunchDescription([
         camera_launch,
         apriltag_launch,
+        camera_tf,
         motor_controller,
         velocity_mapping,
         coverage_node,
