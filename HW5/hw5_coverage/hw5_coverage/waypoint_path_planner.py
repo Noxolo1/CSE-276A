@@ -1,22 +1,4 @@
-#!/usr/bin/env python3
-"""
-Generate HW5 lawnmower coverage waypoints based on the AprilTag map.
-
-Assumptions:
-- The map/world frame origin (0, 0) is at the physical center of the 8x8ft
-  workspace where you place the robot at the start.
-- apriltags_position.yaml gives tag positions in that same map frame.
-
-Usage example:
-
-  cd ~/ros2_ws/rubikpi_ros2/hw5_coverage/hw5_coverage
-  python3 generate_hw5_lawnmower_waypoints.py \
-      --yaml apriltags_position.yaml \
-      --output hw5_waypoints_lawnmower.json \
-      --margin 0.15 \
-      --stripe_spacing 0.20
-"""
-
+# generates lawnmower coverage waypoints based on apriltag locations 
 import argparse
 import json
 import math
@@ -34,37 +16,25 @@ def load_tag_map(yaml_path):
         xs.append(float(tag["x"]))
         ys.append(float(tag["y"]))
     if not xs or not ys:
-        raise RuntimeError("No apriltags found in YAML.")
+        raise RuntimeError("no apriltags found in yaml")
 
     x_min, x_max = min(xs), max(xs)
     y_min, y_max = min(ys), max(ys)
     return x_min, x_max, y_min, y_max
 
 
-def generate_lawnmower_waypoints(x_min, x_max, y_min, y_max,
-                                 margin=0.15, stripe_spacing=0.20):
-    """
-    Generate a boustrophedon (lawnmower) pattern.
+def generate_lawnmower_waypoints(x_min, x_max, y_min, y_max, margin=0.15, stripe_spacing=0.20):
+    # generates lawnmower pattern
 
-    - Shrinks workspace by 'margin' from each side.
-    - First stripe is centered in Y (i.e., through the workspace center).
-    - Stripes then alternate above/below that center line.
-    - Even stripes go left->right in X; odd stripes right->left.
-    """
-
-    # Shrink bounds by margin
+    # optional boundary padding w/ margin
     x_min_in = x_min + margin
     x_max_in = x_max - margin
     y_min_in = y_min + margin
     y_max_in = y_max - margin
 
-    if x_min_in >= x_max_in or y_min_in >= y_max_in:
-        raise RuntimeError("Margin too large; no interior workspace remains.")
-
-    # Compute "center line" in Y (approx origin if map is centered at (0,0))
     y_center = 0.5 * (y_min_in + y_max_in)
 
-    # Build stripe Y-values: center, then ± stripe_spacing
+    # build stripe y vals: center, then +- stripe_spacing
     ys = []
     ys.append(y_center)
     k = 1
@@ -91,49 +61,47 @@ def generate_lawnmower_waypoints(x_min, x_max, y_min, y_max,
         if even:
             x_start = x_min_in
             x_end = x_max_in
-            theta_row = 0.0        # facing +x
+            theta_row = 0.0
         else:
             x_start = x_max_in
             x_end = x_min_in
-            theta_row = math.pi    # facing -x
+            theta_row = math.pi
 
         if i == 0:
-            # First stripe: go from one side to the other at the center line.
-            # Robot starts near (0, 0); first command will be to drive toward
-            # (x_start, y_center).
+            # first stripe go from one side to the other at the center line
             waypoints.append({"x": x_start, "y": row_y, "theta": theta_row})
         else:
-            # Connector: move vertically from previous stripe to this row_y,
-            # then align along stripe direction.
+            # move vertically from previous stripe to this row_y then align
             prev_wp = waypoints[-1]
 
-            # Vertical move to new row_y (same x as previous)
+            # move to new row_y 
             theta_vertical = math.pi / 2.0 if row_y > prev_wp["y"] else -math.pi / 2.0
             waypoints.append({"x": prev_wp["x"], "y": row_y, "theta": theta_vertical})
 
-            # Rotate to stripe direction at x_start
+            # rotate to stripe direction at x_start
             waypoints.append({"x": x_start, "y": row_y, "theta": theta_row})
 
-        # Main sweep of this stripe
+        # main sweep of this stripe
         waypoints.append({"x": x_end, "y": row_y, "theta": theta_row})
 
     return waypoints
 
 
 def main():
+    # parameterized for quick adjustments
     parser = argparse.ArgumentParser()
     parser.add_argument("--yaml", required=True,
-                        help="Path to apriltags_position.yaml")
+                        help="path to apriltags_position.yaml")
     parser.add_argument("--output", required=True,
-                        help="Path to output JSON waypoint file")
+                        help="path to output JSON waypoint file")
     parser.add_argument("--margin", type=float, default=0.15,
-                        help="Margin from each boundary (m)")
+                        help="margin from each boundary ")
     parser.add_argument("--stripe_spacing", type=float, default=0.20,
-                        help="Spacing between lawnmower stripes (m)")
+                        help="spacing between lawnmower stripes ")
     args = parser.parse_args()
 
     x_min, x_max, y_min, y_max = load_tag_map(args.yaml)
-    print(f"Workspace from tags: x in [{x_min:.3f}, {x_max:.3f}], "
+    print(f"workspace from tags: x in [{x_min:.3f}, {x_max:.3f}], "
           f"y in [{y_min:.3f}, {y_max:.3f}]")
 
     wps = generate_lawnmower_waypoints(
@@ -141,7 +109,7 @@ def main():
         margin=args.margin,
         stripe_spacing=args.stripe_spacing
     )
-    print(f"Generated {len(wps)} waypoints.")
+    print(f"generated {len(wps)} waypoints")
 
     out_dir = os.path.dirname(os.path.abspath(args.output))
     if out_dir and not os.path.exists(out_dir):
@@ -150,7 +118,7 @@ def main():
     with open(args.output, "w") as f:
         json.dump(wps, f, indent=2)
 
-    print(f"Saved waypoints to: {args.output}")
+    print(f"saved waypoints to: {args.output}")
 
 
 if __name__ == "__main__":

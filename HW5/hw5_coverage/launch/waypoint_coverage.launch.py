@@ -1,12 +1,46 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction
+from launch.actions import IncludeLaunchDescription, TimerAction, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch.substitutions import LaunchConfiguration
+
 import os
 
+
 def generate_launch_description():
-    # Camera + AprilTags (same as HW2/HW3/HW4; adjust to your actual file names)
+    default_wp_path = os.path.join(
+        os.path.expanduser("~"),
+        "ros2_ws", "rubikpi_ros2", "hw5_coverage", "hw5_coverage",
+        "hw5_waypoints_lawnmower.json",
+    )
+
+    default_tag_yaml_path = os.path.join(
+        os.path.expanduser("~"),
+        "ros2_ws", "rubikpi_ros2", "hw5_coverage", "configs",
+        "apriltags_position.yaml",
+    )
+
+    default_log_dir = os.path.dirname(default_wp_path)
+
+    waypoint_file_arg = DeclareLaunchArgument(
+        "waypoint_file",
+        default_value=default_wp_path,
+        description="Path to HW5 lawnmower waypoint JSON file.",
+    )
+
+    tag_yaml_arg = DeclareLaunchArgument(
+        "tag_yaml_file",
+        default_value=default_tag_yaml_path,
+        description="Path to AprilTag map YAML (not used by follower right now).",
+    )
+
+    log_dir_arg = DeclareLaunchArgument(
+        "log_dir",
+        default_value=default_log_dir,
+        description="Directory where HW5 pose logger will save trajectory JSON.",
+    )
+
     camera_pkg = FindPackageShare('robot_vision_camera').find('robot_vision_camera')
     camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -21,7 +55,6 @@ def generate_launch_description():
         )
     )
 
-    # Static TF base_link -> camera_frame (HW2 reference node)
     camera_tf = TimerAction(
         period=5.0,
         actions=[
@@ -32,7 +65,7 @@ def generate_launch_description():
                 output='screen',
                 emulate_tty=True,
             )
-        ]
+        ],
     )
 
     motor_controller = TimerAction(
@@ -45,7 +78,7 @@ def generate_launch_description():
                 output='screen',
                 emulate_tty=True,
             )
-        ]
+        ],
     )
 
     velocity_mapping = TimerAction(
@@ -53,36 +86,39 @@ def generate_launch_description():
         actions=[
             Node(
                 package='hw5_coverage',
-                executable='hw5_velocity_mapping',  # from earlier
+                executable='hw5_velocity_mapping',
                 name='hw5_velocity_mapping',
                 output='screen',
                 emulate_tty=True,
             )
-        ]
+        ],
     )
 
-    coverage_node = TimerAction(
+    waypoint_follower = TimerAction(
         period=10.0,
         actions=[
             Node(
                 package='hw5_coverage',
-                executable='hw5_coverage_node',
-                name='hw5_coverage_node',
+                executable='hw5_waypoint_coverage',
+                name='hw5_waypoint_coverage',  
                 output='screen',
                 emulate_tty=True,
                 parameters=[
-                    {'trajectory_log_file': 'hw5_coverage_trajectory.json'},
-                    # you can also override k_v, k_w, explore_speed, etc. here
+                    {"waypoint_file": LaunchConfiguration("waypoint_file")},
+                    {"tag_yaml_file": LaunchConfiguration("tag_yaml_file")},
                 ],
             )
-        ]
+        ],
     )
 
     return LaunchDescription([
+        waypoint_file_arg,
+        tag_yaml_arg,
+        log_dir_arg,
         camera_launch,
         apriltag_launch,
         camera_tf,
         motor_controller,
         velocity_mapping,
-        coverage_node,
+        waypoint_follower,
     ])

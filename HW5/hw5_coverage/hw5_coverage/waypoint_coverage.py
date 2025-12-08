@@ -2,15 +2,17 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist, TransformStamped
-from tf2_ros import TransformBroadcaster
+from tf2_ros import TransformBroadcaster, Buffer, TransformListener, TransformException
 import numpy as np
 from math import sin, cos
 import json
 import os
 from datetime import datetime
+import yaml
+from scipy.spatial.transform import Rotation
 
 
-# PID controller (same as HW4)
+# PID controller (same as HW4s)
 class PIDcontroller:
     def __init__(self, Kp, Ki, Kd):
         self.Kp = Kp
@@ -39,7 +41,6 @@ class PIDcontroller:
         heading_error = desired_heading - currentState[2]
         heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
 
-        # Once we're close to the waypoint position, switch to yaw error
         if abs(distance) < 0.05:
             heading_error = targetState[2] - currentState[2]
             heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
@@ -61,16 +62,13 @@ class PIDcontroller:
 
         self.lastError = e
 
-        # saturate linear
         if abs(result[0]) > self.maximumValue:
             result[0] = np.sign(result[0]) * self.maximumValue
 
-        # saturate angular
-        max_angular = 1.5  # rad/s
+        max_angular = 1.5 
         if abs(result[1]) > max_angular:
             result[1] = np.sign(result[1]) * max_angular
 
-        # if we are basically at the waypoint, stop linear motion
         if abs(e[0]) < 0.05:
             result[0] = 0.0
         return result
@@ -80,22 +78,33 @@ class WaypointFollowerNode(Node):
     def __init__(self):
         super().__init__("waypoint_follower_node")
 
-        # parameter for waypoint data (default: HW5 lawnmower waypoints)
+        # parameter for waypoint data
         self.declare_parameter("waypoint_file", "hw5_waypoints_lawnmower.json")
-        # kept for compatibility with launch file, but unused here
-        self.declare_parameter("tag_yaml_file", "")
+        self.declare_parameter("tag_yaml_file", "apriltags_position.yaml")
+        self.declare_parameter("enable_apriltag_corrections", True)
+        self.declare_parameter("correction_max_age", 1.0)  # sec
 
         self.cmd_vel_pub = self.create_publisher(Twist, "/cmd_vel", 10)
 
         self.tf_broadcaster = TransformBroadcaster(self)
+        
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         self.odom_frame = "odom"
         self.base_frame = "base_link"
+        self.camera_frame = "camera_frame"
 
-        # path to waypoint file (resolved in load_waypoints)
+        # path to waypoint file
         self.waypoint_path = None
 
-        # load waypoints (x, y, yaw)
+        # load in apriltag map
+        self.tag_data = self.load_apriltag_map()
+        self.enable_corrections = self.get_parameter("enable_apriltag_corrections").value
+        self.correction_max_age = self.get_parameter("correction_max_age").value
+        self.last_correction_time = 0.0
+
+        # load waypoints
         self.waypoints = self.load_waypoints()
 
         if len(self.waypoints) == 0:
@@ -103,10 +112,14 @@ class WaypointFollowerNode(Node):
             return
 
         self.get_logger().info(f"Loaded {len(self.waypoints)} waypoints")
+        if self.enable_corrections:
+            self.get_logger().info(f"AprilTag corrections enabled (loaded {len(self.tag_data)} tags)")
+        else:
+            self.get_logger().info("AprilTag corrections disabled (pure dead reckoning)")
 
         self.pid = PIDcontroller(0.5, 0.01, 0.005)
 
-        # init robot state at first waypoint (assume robot starts there)
+        # init robot state at first waypoint (we assume robot starts there)
         self.current_state = np.array(
             [
                 self.waypoints[0][0],  # x
@@ -117,14 +130,18 @@ class WaypointFollowerNode(Node):
 
         self.current_waypoint_idx = 0
         self.waypoint_reached = False
-        self.tolerance = 0.05  # position tolerance (meters)
-        self.angle_tolerance = 0.2  # angle tolerance (radians)
+        self.tolerance = 0.05  # position tolerance (m)
+        self.angle_tolerance = 0.2  # angle tolerance (rad)
 
         self.dt = 0.1
         self.control_timer = self.create_timer(self.dt, self.control_loop)
+        
+        # timer to consider apriltag correction
+        if self.enable_corrections:
+            self.correction_timer = self.create_timer(0.1, self.apriltag_correction)
 
         self.stage = "rotate_to_goal"
-        self.fixed_rotation_vel = 0.785  # rad/s
+        self.fixed_rotation_vel = 0.785 
 
         # logging setup
         if self.waypoint_path is not None:
@@ -132,23 +149,56 @@ class WaypointFollowerNode(Node):
         else:
             base_dir = os.getcwd()
 
-        # orientation log (like HW4)
+        # orientation log
         self.orientation_log = []
         self.orientation_log_path = os.path.join(base_dir, "hw5_orientation_log.json")
 
-        # coverage trajectory log (new for HW5)
+        # coverage trajectory log
         self.trajectory_log = []
         self.trajectory_log_dir = base_dir
 
-        self.get_logger().info("HW5 waypoint follower node started")
+        self.get_logger().info("hw5 waypoint follower node started")
 
-    # ------------------------------------------------------------------
-    # Waypoint loading
-    # ------------------------------------------------------------------
+
+    def load_apriltag_map(self):
+        yaml_file = self.get_parameter("tag_yaml_file").value
+        
+        if not yaml_file:
+            self.get_logger().warn("No AprilTag map file specified")
+            return []
+        
+        possible_paths = [
+            yaml_file,
+            os.path.join(os.getcwd(), yaml_file),
+            os.path.join(os.path.expanduser("~"), "ros2_ws", yaml_file),
+            os.path.join(os.path.expanduser("~"), "ros2_ws", "src", "hw5_coverage", "configs", yaml_file),
+        ]
+        
+        yaml_path = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                yaml_path = path
+                break
+        
+        if yaml_path is None:
+            self.get_logger().warn(f"Could not find AprilTag map: {yaml_file}")
+            return []
+        
+        try:
+            with open(yaml_path, 'r') as f:
+                data = yaml.safe_load(f)
+            
+            tags = data.get('apriltags', [])
+            self.get_logger().info(f"Loaded {len(tags)} AprilTags from {yaml_path}")
+            return tags
+        except Exception as e:
+            self.get_logger().error(f"Error loading AprilTag map: {e}")
+            return []
+
+
     def load_waypoints(self):
         waypoint_file = self.get_parameter("waypoint_file").value
 
-        # Try direct path first
         if not os.path.exists(waypoint_file):
             possible_paths = [
                 waypoint_file,
@@ -161,10 +211,10 @@ class WaypointFollowerNode(Node):
                     waypoint_file = path
                     break
             else:
-                self.get_logger().error(f"Could not find waypoint file: {waypoint_file}")
+                self.get_logger().error(f"could not find waypoint file: {waypoint_file}")
                 return np.array([])
 
-        self.get_logger().info(f"Loading waypoints from: {waypoint_file}")
+        self.get_logger().info(f"loading waypoints from: {waypoint_file}")
         self.waypoint_path = waypoint_file
 
         try:
@@ -175,7 +225,6 @@ class WaypointFollowerNode(Node):
             for wp in data:
                 x = float(wp["x"])
                 y = float(wp["y"])
-                # accept either 'yaw' (HW4 style) or 'theta' (HW5 generator)
                 yaw = float(wp.get("yaw", wp.get("theta", 0.0)))
                 waypoints.append([x, y, yaw])
 
@@ -185,9 +234,119 @@ class WaypointFollowerNode(Node):
             self.get_logger().error(f"Error loading waypoints: {str(e)}")
             return np.array([])
 
-    # ------------------------------------------------------------------
-    # Dead-reckoning + TF
-    # ------------------------------------------------------------------
+    # apriltag localization (reused from hw2)
+    def compute_robot_pose_from_tag(self, tag_id, observation):
+        """Compute robot pose from AprilTag observation"""
+        tag_data = None
+        for tag in self.tag_data:
+            if tag.get('id') == tag_id:
+                tag_data = tag
+                break
+        
+        if tag_data is None:
+            return None
+        
+        tag_map_pos = np.array([tag_data['x'], tag_data['y'], tag_data['z']])
+        tag_map_rot = Rotation.from_quat([
+            tag_data['qx'], tag_data['qy'], 
+            tag_data['qz'], tag_data['qw']
+        ])
+        
+        obs_pos = np.array([
+            observation.transform.translation.x,
+            observation.transform.translation.y,
+            observation.transform.translation.z
+        ])
+        obs_rot = Rotation.from_quat([
+            observation.transform.rotation.x,
+            observation.transform.rotation.y,
+            observation.transform.rotation.z,
+            observation.transform.rotation.w
+        ])
+        
+        tag_to_camera_rot = obs_rot.inv()
+        tag_to_camera_pos = -tag_to_camera_rot.apply(obs_pos)
+        
+        camera_map_rot = tag_map_rot * tag_to_camera_rot
+        camera_map_pos = tag_map_pos + tag_map_rot.apply(tag_to_camera_pos)
+        
+        camera_to_base_pos = np.array([-0.0675, 0.0, -0.035])
+        camera_to_base_rot = Rotation.from_quat([-0.5, 0.5, -0.5, 0.5])
+        
+        robot_map_rot = camera_map_rot * camera_to_base_rot
+        robot_map_pos = camera_map_pos + camera_map_rot.apply(camera_to_base_pos)
+        
+        yaw = robot_map_rot.as_euler('xyz')[2]
+        
+        return (float(robot_map_pos[0]), float(robot_map_pos[1]), float(yaw))
+
+    def apriltag_correction(self):
+        # applies apriltag correction to dead reckoning
+        if not self.enable_corrections or len(self.tag_data) == 0:
+            return
+        
+        # only correct during driving stage
+        if self.stage != 'drive':
+            return
+        
+        now = self.get_clock().now().nanoseconds / 1e9
+        
+        # get closest visible tag 
+        best_tag_id = None
+        best_distance = float('inf')
+        best_observation = None
+        
+        for tag in self.tag_data:
+            tag_id = tag.get('id')
+            if tag_id is None:
+                continue
+
+            try:
+                obs = self.tf_buffer.lookup_transform(
+                    self.camera_frame,
+                    f'tag_{tag_id}',
+                    rclpy.time.Time(),
+                    timeout=rclpy.duration.Duration(seconds=0.01)
+                )
+                
+                # check obs age
+                obs_time = rclpy.time.Time.from_msg(obs.header.stamp)
+                time_diff = (self.get_clock().now() - obs_time).nanoseconds / 1e9
+                
+                if time_diff > 0.5:  # threshold for being too old
+                    continue
+                
+                dx = obs.transform.translation.x
+                dy = obs.transform.translation.y
+                dz = obs.transform.translation.z
+                distance = np.sqrt(dx*dx + dy*dy + dz*dz)
+                
+                if distance < best_distance:
+                    best_distance = distance
+                    best_tag_id = tag_id
+                    best_observation = obs
+                    
+            except TransformException:
+                continue
+        
+        # apply correction
+        if best_observation is not None:
+            pose = self.compute_robot_pose_from_tag(best_tag_id, best_observation)
+            
+            if pose is not None:
+                age = now - self.last_correction_time
+                
+                if age <= self.correction_max_age or self.last_correction_time == 0.0:
+                    self.current_state = np.array(pose)
+                    self.last_correction_time = now
+                    
+                    self.get_logger().info(
+                        f"AprilTag correction from tag {best_tag_id}: "
+                        f"({pose[0]:.2f}, {pose[1]:.2f}, {pose[2]:.2f})",
+                        throttle_duration_sec=2.0
+                    )
+
+
     def update_dead_reckoning(self, linear_vel, angular_vel):
         """
         Update robot pose using dead reckoning
@@ -238,9 +397,7 @@ class WaypointFollowerNode(Node):
 
         return qx, qy, qz, qw
 
-    # ------------------------------------------------------------------
-    # Helper methods for control
-    # ------------------------------------------------------------------
+
     def get_desired_heading_to_goal(self, current_wp):
         """
         Get the desired heading to face towards the goal
@@ -261,7 +418,6 @@ class WaypointFollowerNode(Node):
             return -self.fixed_rotation_vel
 
     def log_orientation_sample(self, stage, current_wp, desired_heading):
-        # Logs a single orientation sample at a given timestep
         t = self.get_clock().now().nanoseconds / 1e9
 
         entry = {
@@ -277,7 +433,6 @@ class WaypointFollowerNode(Node):
         self.orientation_log.append(entry)
 
     def log_trajectory_sample(self):
-        # Logs pose for coverage trajectory
         t = self.get_clock().now().nanoseconds / 1e9
         entry = {
             "time": float(t),
@@ -289,23 +444,12 @@ class WaypointFollowerNode(Node):
         }
         self.trajectory_log.append(entry)
 
-    # ------------------------------------------------------------------
-    # Main control loop (HW4-style FSM)
-    # ------------------------------------------------------------------
     def control_loop(self):
-        """
-        Main control loop with three stages:
-          1) rotate_to_goal
-          2) drive
-          3) rotate_to_orient
-        """
         if self.current_waypoint_idx >= len(self.waypoints):
             self.get_logger().info("All waypoints reached! Stopping robot.")
             self.stop_robot()
             self.broadcast_tf()
-            # we still log final pose
             self.log_trajectory_sample()
-            # keep orientation log behavior similar to HW4
             self.save_orientation_log()
             return
 
@@ -329,7 +473,6 @@ class WaypointFollowerNode(Node):
             heading_error = desired_heading - self.current_state[2]
             heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
 
-            # log actual vs desired orientation
             self.log_orientation_sample(self.stage, current_wp, desired_heading)
 
             if abs(heading_error) < 0.05:
@@ -338,11 +481,10 @@ class WaypointFollowerNode(Node):
             else:
                 twist_msg.angular.z = float(self.get_rotation_direction(heading_error))
 
-        # Stage 2: Drive towards the goal
+        # Stage 2: Drive towards the goal (we correct w/ apriltag here if needed)
         elif self.stage == "drive":
             desired_heading = self.get_desired_heading_to_goal(current_wp)
 
-            # log actual vs desired orientation while driving
             self.log_orientation_sample(self.stage, current_wp, desired_heading)
 
             if position_error < self.tolerance:
@@ -358,7 +500,6 @@ class WaypointFollowerNode(Node):
             heading_error = current_wp[2] - self.current_state[2]
             heading_error = (heading_error + np.pi) % (2 * np.pi) - np.pi
 
-            # log actual vs both heading-to-waypoint and final yaw
             self.log_orientation_sample(self.stage, current_wp, desired_heading)
 
             if abs(heading_error) < self.angle_tolerance:
@@ -372,17 +513,11 @@ class WaypointFollowerNode(Node):
             else:
                 twist_msg.angular.z = float(self.get_rotation_direction(heading_error))
 
-        # dead-reckoning + TF + command publish
         self.update_dead_reckoning(twist_msg.linear.x, twist_msg.angular.z)
         self.broadcast_tf()
         self.cmd_vel_pub.publish(twist_msg)
-
-        # log coverage trajectory sample
         self.log_trajectory_sample()
 
-    # ------------------------------------------------------------------
-    # Logging save
-    # ------------------------------------------------------------------
     def save_orientation_log(self):
         if not self.orientation_log:
             return
@@ -415,9 +550,6 @@ class WaypointFollowerNode(Node):
         except Exception as e:
             self.get_logger().warn(f"failed to save trajectory log: {e!r}")
 
-    # ------------------------------------------------------------------
-    # Stop robot
-    # ------------------------------------------------------------------
     def stop_robot(self):
         twist_msg = Twist()
         self.cmd_vel_pub.publish(twist_msg)
@@ -453,3 +585,4 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
+

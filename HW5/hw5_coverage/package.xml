@@ -7,13 +7,11 @@
   <maintainer email="new002@ucsd.edu">nate wilson</maintainer>
   <license>MIT</license>
 
-  <!-- Core dependencies -->
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>tf2_ros</depend>
 
-  <!-- We just launch these from this package; keeping them as run deps is fine -->
   <exec_depend>robot_control</exec_depend>
   <exec_depend>apriltag_ros</exec_depend>
   <exec_depend>robot_vision_camera</exec_depend>
