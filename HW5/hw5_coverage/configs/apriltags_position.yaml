@@ -67,7 +67,7 @@ apriltags:
 
   - id: 6
     # Position in map frame (meters)
-    x: -1.3081
+    x: -1.9177
     y: 0.5588
     z: 0.0
     # Orientation in map frame (quaternion)
@@ -78,7 +78,7 @@ apriltags:
 
   - id: 7
     # Position in map frame (meters)
-    x: -1.3335
+    x: -1.9177
     y: -0.5334
     z: 0.0
     # Orientation in map frame (quaternion)
@@ -89,7 +89,7 @@ apriltags:
 
   - id: 8
     # Position in map frame (meters)
-    x: -1.3335
+    x: -1.9177
     y: -0.0254
     z: 0.0
     # Orientation in map frame (quaternion)
