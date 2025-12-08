@@ -1,4 +1,3 @@
-# generates lawnmower coverage waypoints based on apriltag locations 
 import argparse
 import json
 import math
